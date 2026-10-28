@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pi Plugin Deck</title>
+<link rel="stylesheet" href="sidebar.css" />
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="head-row">
+      <div class="logo" aria-hidden="true">@</div>
+      <div class="identity"><strong>PI PLUGIN DECK</strong><small>ChatGPT gyorsválasztó · v0.2.3</small></div>
+      <button type="button" id="openChat" class="icon-button" title="ChatGPT megnyitása" aria-label="ChatGPT megnyitása">↗</button>
+    </div>
+    <div class="toolbar">
+      <button id="refresh" class="primary" type="button">↻ Sajátak frissítése</button>
+      <button id="diagnostics" class="ghost" type="button" title="Kiolvasás ellenőrzése és diagnosztika másolása">⌕ Diagnosztika</button>
+      <button id="addPlugin" class="ghost" type="button">＋ Plugin</button>
+      <button id="manageCategories" class="ghost" type="button">☷ Kategóriák</button>
+    </div>
+    <label class="search-wrap"><span class="sr-only">Keresés a pluginok között</span>
+      <span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Keresés név alapján…" autocomplete="off" />
+    </label>
+  </header>
+  <nav id="filters" class="filters" aria-label="Kategóriák"></nav>
+  <main id="list" aria-label="Pluginlista"></main>
+  <div id="empty" class="empty" hidden></div>
+  <footer>
+    <div id="status" role="status" aria-live="polite">Kattints egy plugin nevére a beillesztéshez.</div>
+    <div class="footer-actions">
+      <button id="showImport" type="button" class="text-button">Import / Export</button>
+      <button id="showHelp" type="button" class="text-button">Használat ⓘ</button>
+    </div>
+  </footer>
+</div>
+<dialog id="editor">
+  <form id="editorForm" method="dialog">
+    <h2 id="editorTitle">Plugin szerkesztése</h2>
+    <label for="pluginName">A ChatGPT-ben látható pontos név</label>
+    <input id="pluginName" required maxlength="110" placeholder="pl. Google Drive" />
+    <label for="pluginCategory">Kategória</label>
+    <select id="pluginCategory"></select>
+    <label class="checkline"><input id="pluginFavorite" type="checkbox" /> Kedvenc</label>
+    <p class="hint">A @ jelet automatikusan hozzáadjuk. Ez nem telepít új plugint a ChatGPT-be.</p>
+    <div class="dialog-actions"><button id="deletePlugin" type="button" class="ghost danger" hidden>Törlés</button><button id="cancelEdit" type="button" class="ghost">Mégse</button><button type="submit" class="primary">Mentés</button></div>
+  </form>
+</dialog>
+<dialog id="catDialog">
+  <div class="dialog-body">
+    <h2>Kategóriák</h2>
+    <p class="hint">Átnevezéskor a hozzárendelések is változnak. Törléskor a pluginok az „Egyéb” kategóriába kerülnek.</p>
+    <div id="categoryRows" class="category-rows"></div>
+    <form id="categoryForm" class="category-add"><input id="newCategory" required maxlength="60" placeholder="Új kategória neve" /><button type="submit" class="primary">＋</button></form>
+    <div class="dialog-actions"><button class="primary" id="closeCats" type="button">Kész</button></div>
+  </div>
+</dialog>
+<dialog id="dataDialog">
+  <div class="dialog-body">
+    <h2>Lista importálása / mentése</h2>
+    <p class="hint">Soronkét egy név, például <code>@Gmail</code>. Vagy korábban exportált JSON. A kategóriák és kedvencek a JSON-ban megmaradnak.</p>
+    <textarea id="importText" rows="7" placeholder="@Google Drive&#10;@Gmail&#10;@Adobe Acrobat"></textarea>
+    <div class="dialog-actions wrap"><button type="button" id="exportData" class="ghost">JSON export</button><button type="button" id="importData" class="primary">Import</button><button id="closeData" type="button" class="ghost">Bezárás</button></div>
+  </div>
+</dialog>
+<dialog id="scanDialog">
+  <div class="dialog-body">
+    <h2>Kiolvasott pluginjavaslatok</h2>
+    <p class="hint" id="scanHint">A felismert neveket ellenőrizd. A kipipált elemek kerülnek a Deck-listába.</p>
+    <div class="scan-tools"><button type="button" id="scanSelectAll" class="ghost">Mind kijelölése</button><button type="button" id="scanSelectNone" class="ghost">Kijelölés törlése</button></div>
+    <div id="scanCandidates" class="scan-candidates"></div>
+    <div class="dialog-actions wrap"><button id="scanCancel" type="button" class="ghost">Mégse</button><button id="scanConfirm" type="button" class="primary">Kijelöltek hozzáadása</button></div>
+  </div>
+</dialog>
+<dialog id="debugDialog">
+  <div class="dialog-body">
+    <h2>Pluginlista-diagnosztika</h2>
+    <p class="hint">A szöveg csak a megnyitott pluginlista-oldal rövid, látható címkéit és szerkezeti statisztikáit tartalmazza. <strong>Olvasd át, mielőtt megosztod!</strong> Nem tartalmaz oldal-HTML-t, cookie-t vagy API-kulcsot.</p>
+    <textarea id="debugOutput" rows="12" readonly spellcheck="false"></textarea>
+    <div class="dialog-actions wrap"><button id="debugCopy" class="primary" type="button">Másolás</button><button id="debugClose" class="ghost" type="button">Bezárás</button></div>
+  </div>
+</dialog>
+<dialog id="helpDialog">
+  <div class="dialog-body">
+    <h2>Hogyan működik?</h2>
+    <p><strong>1.</strong> Kattints a plugin nevére: a Deck beilleszti a <code>@Pontos név</code> szöveget az aktuális ChatGPT-beszélgetésbe.</p>
+    <p><strong>2.</strong> Ha megjelenik a ChatGPT saját találatlistája, ellenőrizd, hogy valóban a plugin lett kiválasztva. A sima szöveg nem egyenlő az aktivált apphivatkozással.</p>
+    <p><strong>3.</strong> A <strong>↻ Sajátak frissítése</strong> a ChatGPT Personal → Created by you oldaláról próbálja kiolvasni a látható pluginneveket. Ha nincs megnyitva a megfelelő oldal, megnyitja neked. Ez felületolvasás, nem hivatalos API. Bizonytalan találatoknál névellenőrző ablakot nyit; a lista csak bővül; a kategóriák és kedvencek nem vesznek el.</p>
+    <p><strong>4.</strong> Ha a frissítés nem talál neveket, kattints a <strong>⌕ Diagnosztika</strong> gombra. A megjelenő szöveget ellenőrzés után másold a chatbe a célzott javításhoz.</p>
+    <p><strong>5.</strong> A Firefox oldalsávjának helyét a Firefox saját oldalsáv-beállításában változtathatod jobbra. A lista és kategóriák helyben tárolódnak.</p>
+    <div class="dialog-actions"><button id="closeHelp" type="button" class="primary">Értem</button></div>
+  </div>
+</dialog>
+<script src="sidebar.js"></script>
+</body>
+</html>

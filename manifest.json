@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Pi Plugin Deck",
+  "version": "0.2.3",
+  "description": "ChatGPT @plugin gyorsvalaszto Firefox oldalsavban: kategoriak, szerkesztes, beillesztes es Created by you szovegpar-felismeres es diagnosztika.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*"
+  ],
+  "action": {
+    "default_title": "Pi Plugin Deck megnyitása"
+  },
+  "sidebar_action": {
+    "default_title": "Pi Plugin Deck",
+    "default_panel": "sidebar.html",
+    "open_at_install": true
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "pi-plugin-deck@local.invalid",
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  }
+}
