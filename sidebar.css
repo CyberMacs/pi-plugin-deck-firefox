@@ -14,3 +14,11 @@ dialog{border:1px solid #3a5568;background:#131d2e;border-radius:15px;color:var(
 .scan-candidates{display:flex;flex-direction:column;gap:7px;max-height:52vh;overflow:auto;overscroll-behavior:contain}.scan-row{display:flex;gap:9px;align-items:center;padding:7px 6px;border:1px solid var(--border);border-radius:7px;font-size:12px}.scan-row small{display:block;color:var(--muted);font-size:10px}.scan-row span{overflow-wrap:anywhere}.scan-row input{flex:0 0 auto}#debugOutput{font-size:10.5px;line-height:1.4;white-space:pre;max-height:55vh}#scanHint{max-height:80px;overflow:auto}
 
 .scan-tools{display:flex;gap:7px;margin-bottom:2px}.scan-tools button{font-size:11px;padding:6px 9px;flex:1}
+
+/* v0.2.4: import preview and status */
+.import-feedback{font-size:11px;color:var(--muted);min-height:14px;overflow-wrap:anywhere}
+.import-feedback.warning{color:#eabf7d}.import-feedback.success{color:var(--primary)}
+.import-review{border:1px solid #328973;border-radius:9px;padding:10px;background:#102a32;font-size:12px}
+.import-review p{margin:5px 0 0;white-space:pre-line;color:var(--fg)}
+.import-review[hidden]{display:none}
+#importFile{padding:7px;font-size:11px}#importText{min-height:120px;max-height:34vh;resize:vertical;font:11px/1.35 ui-monospace,monospace}

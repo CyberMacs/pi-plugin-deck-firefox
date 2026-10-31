@@ -58,10 +58,32 @@
 </dialog>
 <dialog id="dataDialog">
   <div class="dialog-body">
-    <h2>Lista importálása / mentése</h2>
-    <p class="hint">Soronkét egy név, például <code>@Gmail</code>. Vagy korábban exportált JSON. A kategóriák és kedvencek a JSON-ban megmaradnak.</p>
-    <textarea id="importText" rows="7" placeholder="@Google Drive&#10;@Gmail&#10;@Adobe Acrobat"></textarea>
-    <div class="dialog-actions wrap"><button type="button" id="exportData" class="ghost">JSON export</button><button type="button" id="importData" class="primary">Import</button><button id="closeData" type="button" class="ghost">Bezárás</button></div>
+    <h2>Import / Export · v0.2.4</h2>
+    <p class="hint">Válassz egy korábban exportált <strong>JSON-fájlt</strong>, illeszd be a teljes JSON szöveget, vagy adj meg soronként egy <code>@Plugin neve</code> hivatkozást.</p>
+    <label for="importFile">Mentés betöltése fájlból (.json, .txt)</label>
+    <input id="importFile" type="file" accept=".json,.txt,application/json,text/plain" />
+    <textarea id="importText" rows="7" spellcheck="false" placeholder='Ide illeszd a JSON-mentést, vagy soronként:&#10;@Google Drive&#10;@Gmail'></textarea>
+    <label for="importMode">Importálási mód</label>
+    <select id="importMode">
+      <option value="merge">Hozzáadás: a meglévő adatok változatlanok</option>
+      <option value="restore">Teljes JSON-visszaállítás: kategóriák + kedvencek</option>
+    </select>
+    <p class="hint">A <strong>hozzáadás</strong> nem írja felül a már meglévő pluginok kategóriáit és kedvenceit. A <strong>visszaállítás</strong> a mentés teljes listáját tölti be a jelenlegi helyett, előzetes belső biztonsági mentéssel.</p>
+    <div id="importFeedback" class="import-feedback" role="status" aria-live="polite"></div>
+    <div id="importReview" class="import-review" hidden>
+      <strong id="importReviewTitle">Import előnézete</strong>
+      <p id="importReviewText"></p>
+      <div class="dialog-actions wrap">
+        <button type="button" id="cancelImport" class="ghost">Mégse</button>
+        <button type="button" id="confirmImport" class="primary">Import megerősítése</button>
+      </div>
+    </div>
+    <div class="dialog-actions wrap">
+      <button type="button" id="exportData" class="ghost">JSON export</button>
+      <button type="button" id="undoImport" class="ghost" hidden>Visszaállítás visszavonása</button>
+      <button type="button" id="importData" class="primary">Import előnézete</button>
+      <button type="button" id="closeData" class="ghost">Bezárás</button>
+    </div>
   </div>
 </dialog>
 <dialog id="scanDialog">
@@ -92,6 +114,7 @@
     <div class="dialog-actions"><button id="closeHelp" type="button" class="primary">Értem</button></div>
   </div>
 </dialog>
+<script src="import-logic.js"></script>
 <script src="sidebar.js"></script>
 </body>
 </html>

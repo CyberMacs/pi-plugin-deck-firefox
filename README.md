@@ -4,7 +4,7 @@
 
 ![Pi Plugin Deck Firefox-oldalsáv a ChatGPT mellett](assets/pi-plugin-deck-sidebar.png)
 
-> **Állapot:** v0.2.3. Közösségi, független Firefox-bővítmény. Nem hivatalos OpenAI- vagy Mozilla-termék. A ChatGPT felületének változásai befolyásolhatják a működést.
+> **Állapot:** v0.2.4. Közösségi, független Firefox-bővítmény. Nem hivatalos OpenAI- vagy Mozilla-termék. A ChatGPT felületének változásai befolyásolhatják a működést.
 
 ## Mire jó?
 
@@ -13,7 +13,7 @@
 - **Kedvencek, keresés és névszerkesztés:** gyors elérés sok plugin esetén is.
 - **↻ Sajátak frissítése:** a ChatGPT `Te hoztad létre / Created by you` oldalán **látható** saját pluginok nevét próbálja kiolvasni. A találatokat jóváhagyás után veszi fel.
 - **Diagnosztika:** oldalszerkezet-változás esetén ellenőrzésre alkalmas, kézzel másolható hibajelentést készít.
-- **JSON export/import:** a helyi beállítások és kategóriák mentése, visszaállítása.
+- **JSON export/import:** saját fájl betöltése vagy teljes JSON beillesztése; külön **hozzáadás** és **teljes visszaállítás** a kategóriákkal és kedvencekkel. Import előtt előnézet, a teljes visszaállítás visszavonható.
 
 ## Telepítés
 
@@ -36,6 +36,15 @@
 5. Nyiss meg egy beszélgetést, és kattints a kívánt plugin nevére.
 
 **A beillesztés nem azonos a plugin biztos aktiválásával.** Ha a ChatGPT nem választotta ki automatikusan a megfelelő `@`-találatot, válaszd ki manuálisan a saját találatlistájából. A bővítmény nem küld el automatikusan üzenetet.
+
+## JSON-mentés visszatöltése (v0.2.4)
+
+1. **Import / Export** → válaszd ki a `.json` fájlt, vagy illeszd be annak **teljes tartalmát** az alsó szövegmezőbe. A korábbi, soronkénti `@Plugin neve` lista továbbra is működik.
+2. **Importálási mód**: a **Hozzáadás** megtartja a meglévő kategóriákat és kedvenceket. A **Teljes JSON-visszaállítás** a mentésből visszaállítja az összes plugint, kategóriát és kedvencet, a jelenlegi lista helyett.
+3. **Import előnézete** → ellenőrizd a darabszámot → **Import megerősítése**. Mentési hiba vagy érvénytelen JSON esetén a lista változatlan marad.
+4. Teljes visszaállítás előtt a Deck belső biztonsági másolatot készít. **Visszaállítás visszavonása** gombbal az előző állapot visszahozható.
+
+**Frissítés aláírt XPI-ről:** csak azonos bővítményazonosítójú, Mozilla által aláírt új verziót telepíts a régi helyére. Előtte készíts JSON exportot. A GitHub ZIP önmagában nem aláírt telepítő.
 
 ## Adatkezelés és jogosultságok
 

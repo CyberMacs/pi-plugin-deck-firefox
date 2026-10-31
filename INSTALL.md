@@ -39,4 +39,10 @@ A szinkronizálás a látható oldalszerkezetre épül, ezért a ChatGPT változ
 
 ## Kompatibilitás
 
-A projekt Firefox Desktop oldalsávra készült. A v0.2.3-ban a manifest legalább Firefox 128-at jelöl, de az adatgyűjtési engedélynyilatkozatot újabb Firefox-verziók értelmezik; ezért **Firefox 140 vagy újabb** javasolt. Android-kompatibilitás nem célja a kiadásnak.
+A projekt Firefox Desktop oldalsávra készült. A v0.2.4-ben a manifest legalább Firefox 128-at jelöl, de az adatgyűjtési engedélynyilatkozatot újabb Firefox-verziók értelmezik; ezért **Firefox 140 vagy újabb** javasolt. Android-kompatibilitás nem célja a kiadásnak.
+
+## v0.2.4 importjavítás
+
+A JSON visszaállítása: **Import / Export** → `.json` fájlválasztás (vagy teljes JSON beillesztése) → **Teljes JSON-visszaállítás** → **Import előnézete** → **Import megerősítése**. Az eredeti lista a visszavonási mentésben megmarad.
+
+Teszt: `node --test tests/import.test.js`.

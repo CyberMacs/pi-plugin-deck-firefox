@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Pi Plugin Deck",
-  "version": "0.2.3",
-  "description": "ChatGPT @plugin gyorsvalaszto Firefox oldalsavban: kategoriak, szerkesztes, beillesztes es Created by you szovegpar-felismeres es diagnosztika.",
+  "version": "0.2.4",
+  "description": "ChatGPT @plugin gyorsválasztó Firefox-oldalsávban: kategóriák, keresés, Created by you lista, JSON import/export és helyreállítás.",
   "permissions": [
     "storage",
     "tabs",

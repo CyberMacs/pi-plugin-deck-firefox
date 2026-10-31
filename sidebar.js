@@ -1,6 +1,7 @@
 'use strict';
 
 const STORAGE_KEY = 'pi-plugin-deck-v02';
+const IMPORT_BACKUP_KEY = 'pi-plugin-deck-before-restore';
 const DEFAULT_CATEGORIES = ['Kreatív', 'Kutatás', 'Munka', 'Fejlesztés', 'Egyéb'];
 const EXAMPLES = [
   { name: 'Gmail', category: 'Munka', sample: true },
@@ -375,49 +376,119 @@ $('debugCopy').addEventListener('click',async()=>{
 });
 $('refresh').addEventListener('click', () => void refreshInstalled());
 
-$('showImport').addEventListener('click', () => $('dataDialog').showModal());
-$('closeData').addEventListener('click', () => $('dataDialog').close());
+// Import: file, pasted JSON and line-based @names share the same validator.
+let pendingImport = null;
+function importFeedback(message, warning = false) {
+  const el = $('importFeedback');
+  el.textContent = message;
+  el.className = 'import-feedback' + (warning ? ' warning' : '');
+}
+function clearImportPreview() {
+  pendingImport = null;
+  $('importReview').hidden = true;
+}
+async function refreshUndoButton() {
+  const result = await browser.storage.local.get(IMPORT_BACKUP_KEY);
+  $('undoImport').hidden = !result[IMPORT_BACKUP_KEY];
+}
+$('showImport').addEventListener('click', async () => {
+  clearImportPreview();
+  importFeedback('');
+  await refreshUndoButton();
+  $('dataDialog').showModal();
+});
+$('closeData').addEventListener('click', () => {
+  clearImportPreview();
+  $('dataDialog').close();
+});
+$('importMode').addEventListener('change', clearImportPreview);
+$('importText').addEventListener('input', () => {
+  clearImportPreview();
+  importFeedback('');
+});
+$('importFile').addEventListener('change', async () => {
+  clearImportPreview();
+  const file = $('importFile').files?.[0];
+  if (!file) return;
+  if (file.size > 1024 * 1024) {
+    importFeedback('Túl nagy fájl: legfeljebb 1 MB tölthető be.', true);
+    return;
+  }
+  try {
+    $('importText').value = await file.text();
+    importFeedback(`Betöltve: ${file.name}. Kattints az „Import előnézete” gombra.`);
+  } catch (error) {
+    importFeedback(`Fájlolvasási hiba: ${String(error.message || error)}`, true);
+  }
+});
 $('exportData').addEventListener('click', async () => {
-  const payload = JSON.stringify({ version: 2, categories: state.categories, items: state.items, exportedAt: new Date().toISOString() }, null, 2);
+  const payload = JSON.stringify({ version: 2, categories: state.categories, items: state.items, lastRefresh: state.lastRefresh, exportedAt: new Date().toISOString() }, null, 2);
   const blob = new Blob([payload], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = 'pi-plugin-deck.json'; document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
-  status('A lista JSON exportja elindult.', 'success');
+  importFeedback('JSON export elindítva. A fájlt a Firefox letöltései között találod.');
+  status('A JSON export elindult.', 'success');
 });
-$('importData').addEventListener('click', async () => {
-  const raw = $('importText').value.trim();
-  if (!raw || raw.length > 250000) { status('Üres vagy túl nagy import.', 'warning'); return; }
-  let names = [];
-  let importedState = null;
+$('importData').addEventListener('click', () => {
+  clearImportPreview();
   try {
-    const json = JSON.parse(raw);
-    if (json && typeof json === 'object' && Array.isArray(json.items)) {
-      importedState = json;
-      names = json.items;
-    } else if (Array.isArray(json)) names = json;
-    else throw new Error('Ismeretlen JSON formátum');
-  } catch (err) {
-    if (/^[\[{]/.test(raw)) { status(`JSON hiba: ${err.message}`, 'warning'); return; }
-    names = raw.split(/[\r\n]+/g);
+    const parsed = PiDeckImport.parseImport($('importText').value);
+    const mode = $('importMode').value;
+    const plan = PiDeckImport.planImport(state, parsed, mode, makeId);
+    pendingImport = plan;
+    $('importReviewTitle').textContent = mode === 'restore' ? 'Teljes visszaállítás megerősítése' : 'Hozzáadás megerősítése';
+    $('importReviewText').textContent = mode === 'restore'
+      ? `A jelenlegi ${plan.oldCount} plugin helyett ${plan.newCount} plugin és ${plan.categoryCount} kategória kerül be. A kedvencek is a JSON-ból állnak vissza. Az előző állapotot külön elmentem a visszavonáshoz.${plan.skipped || plan.duplicates ? `\nFigyelmeztetés: ${plan.skipped} érvénytelen, ${plan.duplicates} ismétlődő elem kihagyva.` : ''}`
+      : `Új plugin: ${plan.added}. Már meglévő (változatlan): ${plan.existing}. Végső összesen: ${plan.newCount}. Kategóriák: ${plan.categoryCount}.${plan.skipped || plan.duplicates ? `\n${plan.skipped} érvénytelen, ${plan.duplicates} ismétlődő elem kihagyva.` : ''}`;
+    $('importReview').hidden = false;
+    importFeedback(parsed.type === 'json' ? 'Érvényes JSON feldolgozva; ellenőrizd az előnézetet.' : 'Soronkinti névlista felismerve; ellenőrizd az előnézetet.');
+    $('importReview').scrollIntoView({block:'nearest'});
+  } catch (error) {
+    importFeedback(`Nem importálható: ${String(error.message || error)} Semmi nem változott.`, true);
   }
-  if (importedState && Array.isArray(importedState.categories)) {
-    for (const cat of importedState.categories.filter(x => typeof x === 'string').map(x => x.trim().slice(0, 60))) {
-      if (cat && !state.categories.includes(cat) && state.categories.length < 60) state.categories.splice(state.categories.length - 1, 0, cat);
-    }
+});
+$('cancelImport').addEventListener('click', clearImportPreview);
+$('confirmImport').addEventListener('click', async () => {
+  const plan = pendingImport;
+  if (!plan) return;
+  $('confirmImport').disabled = true;
+  try {
+    const next = plan.nextState;
+    const toSave = { [STORAGE_KEY]: next };
+    if (plan.mode === 'restore') toSave[IMPORT_BACKUP_KEY] = structuredClone(state);
+    // Single storage write, then update in-memory state only if persistence succeeds.
+    await browser.storage.local.set(toSave);
+    state = next;
+    if (!state.categories.includes(activeCategory)) activeCategory = 'Mind';
+    render();
+    clearImportPreview();
+    await refreshUndoButton();
+    importFeedback(`Kész! ${plan.newCount} plugin, ${plan.categoryCount} kategória mentve.`);
+    status(plan.mode === 'restore'
+      ? `JSON visszaállítva: ${plan.newCount} plugin és kedvencek. Az előző állapot visszavonható.`
+      : `${plan.added} új plugin hozzáadva, ${plan.existing} korábbi megőrizve.`, 'success');
+  } catch(error) {
+    importFeedback(`Mentési hiba: ${String(error.message || error)}. A lista nem változott.`, true);
+  } finally { $('confirmImport').disabled = false; }
+});
+$('undoImport').addEventListener('click', async () => {
+  const data = await browser.storage.local.get(IMPORT_BACKUP_KEY);
+  const previous = data[IMPORT_BACKUP_KEY];
+  if (!previous || !Array.isArray(previous.items) || !Array.isArray(previous.categories)) {
+    importFeedback('Nincs visszaállítható korábbi állapot.', true); return;
   }
-  let added = 0;
-  for (const rawItem of names.slice(0, 500)) {
-    const name = cleanName(typeof rawItem === 'string' ? rawItem : rawItem?.name);
-    if (!name || state.items.some(x => x.name.toLocaleLowerCase('hu') === name.toLocaleLowerCase('hu')) || state.items.length >= 500) continue;
-    const rawCat = typeof rawItem === 'object' && rawItem !== null ? rawItem.category : undefined;
-    state.items.push({ id: makeId(), name, category: state.categories.includes(rawCat) ? rawCat : 'Egyéb', favorite: Boolean(rawItem?.favorite), sample: false });
-    added++;
-  }
-  await save(); render();
-  $('dataDialog').close();
-  status(`${added} új plugin hozzáadva. A kategóriák megmaradtak.`, 'success');
+  if (!confirm('Visszaállítod az előző listát és kategóriákat? A jelenlegi állapot a visszavonási mentésbe kerül.')) return;
+  try {
+    await browser.storage.local.set({[STORAGE_KEY]:previous,[IMPORT_BACKUP_KEY]:structuredClone(state)});
+    state = previous;
+    activeCategory = 'Mind';
+    render();
+    clearImportPreview();
+    importFeedback('Az előző állapot visszaállítva.');
+    status('Előző pluginlista visszaállítva.', 'success');
+  } catch (error) { importFeedback(`Visszavonás sikertelen: ${String(error.message || error)}`, true); }
 });
 $('showHelp').addEventListener('click', () => $('helpDialog').showModal());
 $('closeHelp').addEventListener('click', () => $('helpDialog').close());
